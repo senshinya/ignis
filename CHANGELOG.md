@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1] (2026-09-17)
+
+### Changed
+
+- Ignis tells Obsidian the window has a native frame, since the browser draws it. No space is reserved for a desktop title bar, macOS traffic lights, or window controls, and the sidebar toggles sit in the top corners on every platform.
+
+### Fixed
+
+- On macOS, the top-left corner no longer shows an empty block with themes that move the ribbon below the header, such as AnuPpuccin's border layout.
+
 ## [0.9.0] (2026-09-16)
 
 ### Added
