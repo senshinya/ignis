@@ -300,6 +300,24 @@ export function trackWrite(path, opts) {
   };
 }
 
+// Drops any write still tracked for a path, e.g. because the path was deleted and a retry would recreate it.
+export function forgetWrite(path) {
+  const entry = entries.get(path);
+
+  if (!entry) {
+    return;
+  }
+
+  const visibleFailure = entry.status === "failed" && !entry.silent;
+
+  discard(path);
+  recompute();
+
+  if (visibleFailure) {
+    emitFailureChange();
+  }
+}
+
 export function getState() {
   return state;
 }

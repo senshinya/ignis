@@ -7,8 +7,15 @@ import {
   resolvePathInfo,
 } from "./transforms.js";
 import { hasVirtualFile, getVirtualFile } from "./virtual-files.js";
-import { trackWrite } from "./write-durability.js";
+import { cancelPending, enqueue } from "./write-coalescer.js";
+import { forgetWrite, trackWrite } from "./write-durability.js";
 import { createUtimes } from "./utimes.js";
+
+// A delete supersedes a write still buffered or retrying for the path, which would otherwise recreate the file.
+function dropPendingWrites(path) {
+  cancelPending(path);
+  forgetWrite(path);
+}
 
 export function createFsSync(metadataCache, contentCache, transport) {
   const commitUtimes = createUtimes(metadataCache, transport);
@@ -180,7 +187,10 @@ export function createFsSync(metadataCache, contentCache, transport) {
       // Fire-and-forget async send, tracked silently: retries with backoff and gives up without surfacing.
       const track = trackWrite(resolved, { silent: true });
 
-      transport.writeFile(resolved, transformed, encoding).then(
+      // Queued per path with the async writes and retries, so a later unlink cannot reach the server first.
+      enqueue(resolved, () =>
+        transport.writeFile(resolved, transformed, encoding),
+      ).then(
         () => track.success(),
         () => track.failure(transformed, encoding, null),
       );
@@ -192,9 +202,10 @@ export function createFsSync(metadataCache, contentCache, transport) {
       markLocalOp(resolved);
       contentCache.delete(resolved);
       metadataCache.delete(resolved);
+      dropPendingWrites(resolved);
 
       // Fire-and-forget. suppress ENOENT (file already gone)
-      transport.unlink(resolved).catch((e) => {
+      enqueue(resolved, () => transport.unlink(resolved)).catch((e) => {
         if (e.code !== "ENOENT") {
           console.error(
             "[shim:fs] unlinkSync background delete failed:",
@@ -257,8 +268,9 @@ export function createFsSync(metadataCache, contentCache, transport) {
       markLocalOp(resolved);
       metadataCache.delete(resolved);
       contentCache.delete(resolved);
+      dropPendingWrites(resolved);
 
-      transport.rm(resolved, recursive).catch((e) => {
+      enqueue(resolved, () => transport.rm(resolved, recursive)).catch((e) => {
         console.error(
           "[shim:fs] rmSync background remove failed:",
           resolved,

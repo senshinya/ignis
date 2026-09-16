@@ -2,6 +2,8 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { createFsSync } from "./sync.js";
 import { resolvePath, registerPathResolver, _reset } from "./transforms.js";
 import { isRecentLocalOp } from "./echo-guard.js";
+import * as wd from "./write-durability.js";
+import * as coalescer from "./write-coalescer.js";
 
 function makeDeps() {
   const store = new Map();
@@ -79,7 +81,7 @@ describe("sync fs mutations", () => {
     expect(deps.transport.mkdir).toHaveBeenCalledWith("newdir", true);
   });
 
-  it("rmSync deletes from the cache and fires the transport", () => {
+  it("rmSync deletes from the cache and fires the transport", async () => {
     const deps = makeDeps();
     const fs = createFsSync(
       deps.metadataCache,
@@ -92,6 +94,7 @@ describe("sync fs mutations", () => {
     fs.rmSync("gone.md", { recursive: true });
 
     expect(deps.store.has(key)).toBe(false);
+    await Promise.resolve();
     expect(deps.transport.rm).toHaveBeenCalled();
   });
 
@@ -262,5 +265,166 @@ describe("readFileSync existence", () => {
       ".obsidian/workspace.Work.json",
       "utf8",
     );
+  });
+});
+
+describe("sync mutations on the same path reach the server in call order", () => {
+  function deferred() {
+    let resolve;
+    let reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  }
+
+  function setup() {
+    const deps = makeDeps();
+    deps.transport.writeFile = vi.fn();
+    deps.transport.unlink = vi.fn(async () => {});
+    const fs = createFsSync(
+      deps.metadataCache,
+      deps.contentCache,
+      deps.transport,
+    );
+    return { deps, fs };
+  }
+
+  afterEach(() => {
+    wd._reset();
+  });
+
+  // Obsidian's case-sensitivity probe on macOS: write a file, then delete it right away.
+  it("sends an unlink only after the earlier write settles", async () => {
+    const { deps, fs } = setup();
+    const write = deferred();
+    deps.transport.writeFile.mockReturnValue(write.promise);
+
+    fs.writeFileSync(".OBSIDIANTEST", "", "utf8");
+    fs.unlinkSync(".OBSIDIANTEST");
+    await Promise.resolve();
+
+    expect(fs.existsSync(".OBSIDIANTEST")).toBe(false);
+    expect(deps.transport.unlink).not.toHaveBeenCalled();
+
+    write.resolve({ mtime: 1, size: 0 });
+
+    await vi.waitFor(() =>
+      expect(deps.transport.unlink).toHaveBeenCalledWith(".OBSIDIANTEST"),
+    );
+  });
+
+  it("still sends the unlink when the earlier write fails", async () => {
+    const { deps, fs } = setup();
+    const write = deferred();
+    deps.transport.writeFile.mockReturnValue(write.promise);
+
+    fs.writeFileSync("a.md", "x", "utf8");
+    fs.unlinkSync("a.md");
+    write.reject(new Error("offline"));
+
+    await vi.waitFor(() =>
+      expect(deps.transport.unlink).toHaveBeenCalledWith("a.md"),
+    );
+  });
+
+  it("sends a write only after an earlier unlink settles", async () => {
+    const { deps, fs } = setup();
+    const unlink = deferred();
+    deps.transport.unlink.mockReturnValue(unlink.promise);
+    deps.transport.writeFile.mockResolvedValue({ mtime: 1, size: 1 });
+
+    fs.unlinkSync("b.md");
+    fs.writeFileSync("b.md", "new", "utf8");
+    await Promise.resolve();
+
+    expect(deps.transport.writeFile).not.toHaveBeenCalled();
+
+    unlink.resolve();
+
+    await vi.waitFor(() =>
+      expect(deps.transport.writeFile).toHaveBeenCalledWith(
+        "b.md",
+        "new",
+        "utf8",
+      ),
+    );
+  });
+
+  it("waits for a write queued through the async API on the same path", async () => {
+    const { deps, fs } = setup();
+    const write = deferred();
+    coalescer.enqueue("e.md", () => write.promise);
+
+    fs.unlinkSync("e.md");
+    await Promise.resolve();
+
+    expect(deps.transport.unlink).not.toHaveBeenCalled();
+
+    write.resolve();
+
+    await vi.waitFor(() =>
+      expect(deps.transport.unlink).toHaveBeenCalledWith("e.md"),
+    );
+  });
+
+  it("does not hold requests for paths with nothing pending", async () => {
+    const { deps, fs } = setup();
+    deps.transport.writeFile.mockReturnValue(new Promise(() => {}));
+
+    fs.writeFileSync("c.md", "x", "utf8");
+    fs.unlinkSync("d.md");
+    await Promise.resolve();
+
+    expect(deps.transport.writeFile).toHaveBeenCalledTimes(1);
+    expect(deps.transport.unlink).toHaveBeenCalledWith("d.md");
+  });
+});
+
+describe("unlinking a path drops writes still pending for it", () => {
+  afterEach(() => {
+    wd._reset();
+    vi.useRealTimers();
+  });
+
+  function setup() {
+    const deps = makeDeps();
+    deps.transport.unlink = vi.fn(async () => {});
+    const fs = createFsSync(
+      deps.metadataCache,
+      deps.contentCache,
+      deps.transport,
+    );
+    return { deps, fs };
+  }
+
+  it("does not retry a failed write once the path is unlinked", async () => {
+    vi.useFakeTimers();
+    const { deps, fs } = setup();
+    deps.transport.writeFile = vi.fn().mockRejectedValue(new Error("offline"));
+    wd.initWriteDurability(deps.transport, coalescer.enqueue);
+
+    fs.writeFileSync("f.md", "x", "utf8");
+    await vi.advanceTimersByTimeAsync(0);
+    fs.unlinkSync("f.md");
+    await vi.advanceTimersByTimeAsync(60000);
+
+    expect(deps.transport.writeFile).toHaveBeenCalledTimes(1);
+    expect(deps.transport.unlink).toHaveBeenCalledWith("f.md");
+  });
+
+  it("does not flush a buffered boot write once the path is unlinked", async () => {
+    vi.useFakeTimers();
+    const { deps, fs } = setup();
+    deps.transport.writeFile = vi.fn(async () => ({ mtime: 1, size: 1 }));
+    coalescer.initWriteCoalescer(deps.transport);
+
+    coalescer.bufferWrite("g.md", "x", "utf8", null);
+    fs.unlinkSync("g.md");
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(deps.transport.writeFile).not.toHaveBeenCalled();
+    expect(deps.transport.unlink).toHaveBeenCalledWith("g.md");
   });
 });
