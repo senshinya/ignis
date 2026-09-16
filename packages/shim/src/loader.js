@@ -2,6 +2,7 @@ import { installRequire } from "./require.js";
 import { installGlobals } from "./globals/index.js";
 import { installCssOverrides } from "./css-overrides.js";
 import { installEmulateMobile } from "./emulate-mobile.js";
+import { installObsidianProcessScope } from "./obsidian-process-scope.js";
 import { installMobileVaultSwitcher } from "./mobile-vault-switcher.js";
 import { installOpenFileParam } from "./open-file-param.js";
 import { initialize, getBootstrapVirtualPlugins } from "./init.js";
@@ -57,6 +58,7 @@ installGlobals(); // process, Buffer, window overrides (before require so Buffer
 installRequire(); // shim registry, window.require
 installCssOverrides(); // browser-specific CSS fixes
 installEmulateMobile();
+installObsidianProcessScope(); // Obsidian's scripts derive the OS from the browser
 
 // Fallback that ends the boot window if layout-ready never fires.
 setTimeout(() => {

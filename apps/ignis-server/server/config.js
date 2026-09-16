@@ -96,6 +96,9 @@ module.exports = {
     return vaults;
   },
 
+  // The operator's acceptance of the statement Obsidian 1.13+ requires before it starts.
+  acceptObsidianTerms: process.env.OBSIDIAN_ACCEPT_TERMS === "true",
+
   demoMode: process.env.DEMO_MODE === "true",
   demoMaxSessions: parseInt(process.env.DEMO_MAX_SESSIONS) || 20,
   demoVaultsPerSession: parseInt(process.env.DEMO_VAULTS_PER_SESSION) || 3,
@@ -107,7 +110,7 @@ module.exports = {
 
   obsidianAssetsPath:
     process.env.OBSIDIAN_ASSETS_PATH ||
-    path.join(REPO_ROOT, "investigation", "obsidian_1.12.7_unpacked"),
+    path.join(REPO_ROOT, "investigation", "obsidian_1.13.7_unpacked"),
 
   get obsidianVersion() {
     // Read from the same path the assets are served from, so the version matches what ships.

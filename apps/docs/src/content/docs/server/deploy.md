@@ -12,13 +12,16 @@ In an empty directory, save this as `docker-compose.yml`:
 ```yaml
 services:
   ignis:
-    image: nobbe/ignis:latest
+    image: ghcr.io/senshinya/ignis:latest
     ports:
       - "8080:8080"
     environment:
       # match these to your host user (run: id)
       - PUID=1000
       - PGID=1000
+      # Obsidian 1.13+ starts only after you accept its terms statement.
+      # Read it at https://github.com/senshinya/ignis/blob/main/apps/docs/src/content/docs/server/environment.md#obsidian-terms, then uncomment:
+      # - OBSIDIAN_ACCEPT_TERMS=true
     volumes:
       - ./vaults:/vaults
       - ./data:/app/data
@@ -36,6 +39,8 @@ This maps three paths onto the host so your data persists across restarts and up
 - `obsidian-app` caches the downloaded Obsidian so it is not fetched again when the container is recreated.
 
 To use a different host port, change the left number, for example `9000:8080`.
+
+Obsidian 1.13 and later only start once you accept Obsidian's terms statement. Read it in [Obsidian terms](/docs/server/environment/#obsidian-terms), and if you agree, uncomment the `OBSIDIAN_ACCEPT_TERMS=true` line. Ignis does not accept it for you.
 
 ## Start the container
 

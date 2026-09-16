@@ -9,7 +9,7 @@ const { spawnSync, execSync } = require("child_process");
 const path = require("path");
 
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
-const IMAGE = process.env.IGNIS_IMAGE || "nobbe/ignis";
+const IMAGE = process.env.IGNIS_IMAGE || "ghcr.io/senshinya/ignis";
 const BUILDER = "ignis-builder";
 const PLATFORMS = "linux/amd64,linux/arm64";
 

@@ -134,7 +134,7 @@ Both examples store vault data in a `vaults/` directory and Ignis state in a `da
 
 ### Building from source
 
-If you're building Ignis from source instead of using the published image, edit `docker-compose.yml` and swap `image: nobbe/ignis:latest` for `build: ../../` (assuming you're running from the cloned repo's `examples/` folder).
+If you're building Ignis from source instead of using the published image, edit `docker-compose.yml` and swap `image: ghcr.io/senshinya/ignis:latest` for `build: ../../` (assuming you're running from the cloned repo's `examples/` folder).
 
 ### Alternative: Cloudflare Tunnel
 

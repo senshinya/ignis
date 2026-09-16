@@ -19,6 +19,10 @@ Ignis shows this warning when it is reached over plain HTTP from any origin othe
 
 To verify that the problem is caused by an insecure context, check the browser console (F12) for an `[ignis]` line naming the blocked API.
 
+### The app shows "Obsidian terms not accepted"
+
+Obsidian 1.13 and later only start after the server operator accepts Obsidian's terms statement. Read it in [Obsidian terms](/docs/server/environment/#obsidian-terms), and if you agree, set `OBSIDIAN_ACCEPT_TERMS=true` in the compose environment and recreate the container with `docker compose up -d`. The container log prints the same warning on startup.
+
 ### Files won't save
 
 Check your container logs for permission errors. Write problems are commonly the result of a mismatch between the container's `PUID`/`PGID` and the owner of the mounted host folders. Set `PUID` and `PGID` to the host user's IDs so Ignis writes as that user. See [File ownership](/docs/server/deploy/#file-ownership) for details.

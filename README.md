@@ -39,13 +39,16 @@ Run Ignis with Docker Compose. Use the following compose file for a basic setup.
 ```yaml
 services:
   ignis:
-    image: nobbe/ignis:latest
+    image: ghcr.io/senshinya/ignis:latest
     ports:
       - "8080:8080"
     environment:
       # match these to your host user (run: id)
       - PUID=1000
       - PGID=1000
+      # Obsidian 1.13+ starts only after you accept its terms statement.
+      # Read it at https://github.com/senshinya/ignis/blob/main/apps/docs/src/content/docs/server/environment.md#obsidian-terms, then uncomment:
+      # - OBSIDIAN_ACCEPT_TERMS=true
     volumes:
       - ./vaults:/vaults
       - ./data:/app/data
@@ -56,7 +59,7 @@ volumes:
   obsidian-app:
 ```
 
-Save it as `docker-compose.yml`, then run `docker compose up -d` and open `http://localhost:8080`. The first start pulls Obsidian from its official source, so give it a minute or two. With no vaults yet, Ignis opens the vault manager to create your first one.
+Save it as `docker-compose.yml`. Obsidian 1.13 and later only start once the server operator accepts Obsidian's [terms statement](https://github.com/senshinya/ignis/blob/main/apps/docs/src/content/docs/server/environment.md#obsidian-terms); read it, and if you agree, uncomment `OBSIDIAN_ACCEPT_TERMS=true`. Then run `docker compose up -d` and open `http://localhost:8080`. The first start pulls Obsidian from its official source, so give it a minute or two. With no vaults yet, Ignis opens the vault manager to create your first one.
 
 > [!IMPORTANT]
 > Before exposing Ignis to other machines, put authentication in front of it and serve it over HTTPS. It has no built-in auth, so anyone who reaches an open instance can read and write the whole vault, and outside a secure context (HTTPS, or `localhost`) the browser disables features Ignis needs. See [Remote access](https://ignis.thiefling.com/docs/security/remote-access/) and [Authentication](https://ignis.thiefling.com/docs/security/authentication/).

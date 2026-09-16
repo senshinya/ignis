@@ -17,9 +17,25 @@ Configure the server through environment variables, set in the `environment:` bl
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `OBSIDIAN_VERSION` | `1.12.7` | Obsidian version fetched on first run. Each release pins a known-good version. |
+| `OBSIDIAN_VERSION` | `1.13.7` | Obsidian version fetched on first run. Each release pins a known-good version. |
 | `OBSIDIAN_PACKAGE` | unset | Path to a pre-placed Obsidian package (`.deb`, `.asar.gz`, or `.asar`) to unpack instead of downloading, for offline installs. |
+| `OBSIDIAN_ACCEPT_TERMS` | unset | Set to `true` to accept Obsidian's terms statement, which Obsidian 1.13 and later require before they start. See [Obsidian terms](#obsidian-terms). |
 | `OBSIDIAN_ASSETS_PATH` | `/app/obsidian-app` | Where the extracted Obsidian files live. Point it at a pre-extracted directory to skip the download. |
+
+### Obsidian terms
+
+Starting with 1.13, Obsidian asks the program hosting it to confirm the following statement, and does not start otherwise:
+
+> I understand and agree that I am not allowed to distribute the Obsidian application, in any form, without explicit approval from the Obsidian team. I also understand that Obsidian is a registered trademark, and I cannot use it without explicit permission granted by the Obsidian team.
+
+Ignis does not confirm this on your behalf. If you run the server and agree to the statement, set `OBSIDIAN_ACCEPT_TERMS=true`:
+
+```yaml
+    environment:
+      - OBSIDIAN_ACCEPT_TERMS=true
+```
+
+Without it, the browser shows the statement and these instructions instead of opening the vault, and the container log prints a warning on startup. Obsidian versions before 1.13 do not ask, so the setting has no effect on them.
 
 ## File ownership
 

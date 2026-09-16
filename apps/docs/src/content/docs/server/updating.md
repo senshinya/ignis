@@ -18,4 +18,6 @@ Your vaults, data, and settings are untouched. If the new image pins a different
 
 Each Ignis release pins a known-good Obsidian version, since an Obsidian release can include changes that break the shim. Updating Ignis moves you to the version pinned by that release.
 
+Obsidian 1.13 and later require the server operator to accept Obsidian's terms statement before they start. When an update moves you to one of these versions, read the statement in [Obsidian terms](/docs/server/environment/#obsidian-terms) and, if you agree, add `OBSIDIAN_ACCEPT_TERMS=true` to the compose environment before recreating the container.
+
 To try a newer Obsidian before the shim has been updated, set `OBSIDIAN_VERSION` in the compose environment. It is downloaded on the next start, with no guarantee that Ignis will run correctly.

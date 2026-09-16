@@ -82,3 +82,20 @@ describe("getVaultPath", () => {
     expect(config.getVaultPath("__proto__")).toBe(null);
   });
 });
+
+describe("acceptObsidianTerms", () => {
+  it("is set only when OBSIDIAN_ACCEPT_TERMS is exactly true", () => {
+    try {
+      delete process.env.OBSIDIAN_ACCEPT_TERMS;
+      expect(loadConfig().acceptObsidianTerms).toBe(false);
+
+      process.env.OBSIDIAN_ACCEPT_TERMS = "yes";
+      expect(loadConfig().acceptObsidianTerms).toBe(false);
+
+      process.env.OBSIDIAN_ACCEPT_TERMS = "true";
+      expect(loadConfig().acceptObsidianTerms).toBe(true);
+    } finally {
+      delete process.env.OBSIDIAN_ACCEPT_TERMS;
+    }
+  });
+});

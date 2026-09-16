@@ -24,6 +24,9 @@ services:
       # bundled server/demo-template/.
       # - DEMO_TEMPLATE_DIR=/app/demo-template
       - WRITE_COALESCE_MS=0 # tmpfs doesn't need debouncing
+      # Obsidian 1.13+ starts only after you accept its terms statement.
+      # Read it at https://github.com/senshinya/ignis/blob/main/apps/docs/src/content/docs/server/environment.md#obsidian-terms, then uncomment:
+      # - OBSIDIAN_ACCEPT_TERMS=true
       - PUID=1000
       - PGID=1000
     tmpfs:

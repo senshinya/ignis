@@ -3,9 +3,9 @@ import { isDemoMode } from "../demo-guards.js";
 import { stripBuildMetadata, isNewer } from "../util/version.js";
 import { ListEditorModal } from "./list-editor-modal.js";
 
-const GITHUB_URL = "https://github.com/Nystik-gh/ignis";
+const GITHUB_URL = "https://github.com/senshinya/ignis";
 const GITHUB_API_LATEST =
-  "https://api.github.com/repos/Nystik-gh/ignis/releases/latest";
+  "https://api.github.com/repos/senshinya/ignis/releases/latest";
 
 function getVersion() {
   return window.__ignis?.version || "unknown";

@@ -1,6 +1,11 @@
 import { showVaultManager } from "../ui-registry.js";
 import { vaultService } from "@ignis/services";
 import { proxyFetch } from "../util/proxy.js";
+import {
+  OBSIDIAN_TERMS_STATEMENT,
+  isObsidianTermsAccepted,
+  reportTermsNotAccepted,
+} from "./obsidian-terms.js";
 
 const listeners = new Map();
 
@@ -8,6 +13,34 @@ const syncHandlers = {
   vault: () => window.__vaultConfig || { id: "default-vault", path: "/" },
   version: () => window.__obsidianVersion || "0.0.0",
   "is-dev": () => false,
+
+  // Managed-install policy (policy.json). Outside a managed install Obsidian allows every feature.
+  policy: () => ({
+    plugins: true,
+    themes: true,
+    snippets: true,
+    sync: true,
+    publish: true,
+    webViewer: true,
+    devTools: true,
+    insider: true,
+  }),
+
+  terms: () => {
+    if (isObsidianTermsAccepted()) {
+      return OBSIDIAN_TERMS_STATEMENT;
+    }
+
+    reportTermsNotAccepted();
+    return null;
+  },
+
+  // Obsidian only flushes pending saves on beforeunload when the window reports it is closing.
+  // A browser tab fires beforeunload only when it is closing or reloading.
+  "is-closing": () => true,
+
+  // The main process keeps the language for its native menus; there are none here.
+  "set-language": () => null,
 
   "file-url": () =>
     "/vault-files/" + encodeURIComponent(window.__currentVaultId || "") + "/",

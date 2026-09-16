@@ -1,4 +1,5 @@
 import { getClipboard } from "./native-clipboard.js";
+import { webFrame } from "../web-frame.js";
 import { reportInsecureApi } from "../../util/insecure-api.js";
 
 const currentWindowState = {
@@ -82,8 +83,14 @@ const currentWindow = {
   },
 
   setSize(width, height) {},
+  setMinimumSize(width, height) {},
   setPosition(x, y) {},
   center() {},
+
+  // Obsidian 1.13 zooms through the window instead of webFrame, and leaves the range check to Electron's main process.
+  setFrameZoomLevel(level) {
+    webFrame.setZoomLevel(Math.max(-2.5, Math.min(3, level)));
+  },
 
   setTrafficLightPosition() {},
   setWindowButtonPosition() {},

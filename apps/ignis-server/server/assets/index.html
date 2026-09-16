@@ -58,6 +58,11 @@
   }
 
   function done() {
+    // The shim scopes what Obsidian's scripts see as process; restore it now that they have run.
+    if (typeof window.__ignisOnObsidianLoaded === "function") {
+      window.__ignisOnObsidianLoaded();
+    }
+
     if (!status) return;
     status.classList.add("fade");
     setTimeout(function () {

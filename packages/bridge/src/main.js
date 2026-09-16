@@ -8,6 +8,7 @@ import {
   patchSettingsModal,
   unpatchSettingsModal,
 } from "./settings/inject.js";
+import { guardUnsupportedSettings } from "./settings/unsupported-settings.js";
 import * as pluginRegistry from "./plugin-registry.js";
 import { initStatusBar } from "./status-bar.js";
 import { initSaveNotice } from "./save-notice.js";
@@ -29,6 +30,7 @@ class IgnisBridgePlugin extends Plugin {
     console.log("[ignis-bridge] Plugin loaded");
 
     await pluginRegistry.refresh();
+    this._unsupportedSettingsUndo = guardUnsupportedSettings(this.app);
     patchSettingsModal(this);
     startDemoGuards();
     this._statusBarUnsub = initStatusBar(this);
@@ -93,6 +95,10 @@ class IgnisBridgePlugin extends Plugin {
 
     if (this._imageRetryUnsub) {
       this._imageRetryUnsub();
+    }
+
+    if (this._unsupportedSettingsUndo) {
+      this._unsupportedSettingsUndo();
     }
 
     unpatchSettingsModal(this);

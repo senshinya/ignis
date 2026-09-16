@@ -22,11 +22,14 @@ services:
     restart: unless-stopped
 
   ignis:
-    image: nobbe/ignis:latest
+    image: ghcr.io/senshinya/ignis:latest
     # To build from source instead, comment out `image` and uncomment:
     # build: ../../
     environment:
-      - OBSIDIAN_VERSION=1.12.7
+      - OBSIDIAN_VERSION=1.13.7
+      # Obsidian 1.13+ starts only after you accept its terms statement.
+      # Read it at https://github.com/senshinya/ignis/blob/main/apps/docs/src/content/docs/server/environment.md#obsidian-terms, then uncomment:
+      # - OBSIDIAN_ACCEPT_TERMS=true
     volumes:
       - ./vaults:/vaults
       - ./data:/app/data

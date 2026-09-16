@@ -6,6 +6,8 @@ const config = require("./config");
 const settings = require("./settings");
 const { getVersion } = require("./version");
 const { versionedSrc, cacheControlFor } = require("./cache-headers");
+const { stampBodyFlags } = require("./index-html");
+const { termsWarning } = require("./obsidian-terms");
 const {
   setupWebSocket,
   watcher,
@@ -187,12 +189,10 @@ function buildIndexHtml() {
     JSON.stringify(scripts.map((s) => versionedSrc(s, obsidianVersion))),
   );
 
-  if (config.demoMode) {
-    html = html.replace(
-      '<body class="theme-dark">',
-      '<body class="theme-dark" data-demo-mode="true">',
-    );
-  }
+  html = stampBodyFlags(html, {
+    demoMode: config.demoMode,
+    obsidianTermsAccepted: config.acceptObsidianTerms,
+  });
 
   cachedHtml = html;
   return cachedHtml;
@@ -229,6 +229,15 @@ const server = app.listen(config.port, async () => {
   console.log(`[ignis] Server running on http://localhost:${config.port}`);
   console.log(`[ignis] Vault root: ${config.vaultRoot}`);
   console.log(`[ignis] Vaults: ${Object.keys(config.vaults).join(", ")}`);
+
+  const warning = termsWarning(
+    config.obsidianVersion,
+    config.acceptObsidianTerms,
+  );
+
+  if (warning) {
+    console.warn(`${ANSI_YELLOW}[ignis] WARNING: ${warning}${ANSI_RESET}`);
+  }
 
   await initPlugins({ app, config, wss, watcher });
 
