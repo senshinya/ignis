@@ -36,6 +36,15 @@ describe("ipcRenderer.sendSync is-closing", () => {
   });
 });
 
+describe("ipcRenderer.sendSync frame", () => {
+  // With a hidden frame, Obsidian keeps room for window controls, and on macOS leaves the top-left corner empty for traffic lights.
+  it("reports the native frame, since the browser draws the window", () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    expect(ipcRenderer.sendSync("frame")).toBe("native");
+  });
+});
+
 describe("ipcRenderer.sendSync set-language", () => {
   it("is handled without an unhandled-channel warning", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});

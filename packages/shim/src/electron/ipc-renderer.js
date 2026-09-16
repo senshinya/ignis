@@ -48,7 +48,8 @@ const syncHandlers = {
   "disable-update": () => true,
   update: () => "",
   "disable-gpu": () => false,
-  frame: () => null,
+  // The browser draws the window, so Obsidian should not reserve room for its own title bar or window controls.
+  frame: () => "native",
   "set-icon": () => null,
   "get-icon": () => null,
 
