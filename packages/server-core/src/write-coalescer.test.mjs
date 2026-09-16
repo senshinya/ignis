@@ -32,6 +32,13 @@ afterEach(async () => {
   await fs.promises.rm(tmpDir, { recursive: true, force: true });
 });
 
+// For tests that flush or cancel buffered writes by hand: a window no slow disk can outlast, so no debounce timer fires first.
+function useLongWindow() {
+  beforeEach(() => {
+    coalescer.configure({ writeCoalesceMs: 60_000 });
+  });
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -199,6 +206,8 @@ describe("flushPending", () => {
 });
 
 describe("cancelPendingSubtree", () => {
+  useLongWindow();
+
   it("drops buffered writes at or under a directory and leaves siblings and outsiders", async () => {
     const dir = path.join(tmpDir, "sub");
     const sibling = path.join(tmpDir, "subling");
@@ -226,6 +235,8 @@ describe("cancelPendingSubtree", () => {
 });
 
 describe("flushPendingSubtree", () => {
+  useLongWindow();
+
   it("flushes buffered writes at or under a directory to disk and clears them", async () => {
     const dir = path.join(tmpDir, "sub");
     await fs.promises.mkdir(dir);
