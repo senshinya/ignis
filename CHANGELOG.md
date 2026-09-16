@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] (2026-09-16)
+
+### Added
+
+- `OBSIDIAN_ACCEPT_TERMS` env var. Obsidian 1.13 and later only start after the host confirms Obsidian's terms statement; Ignis confirms it only when the operator sets this to `true`. Without it, the browser shows the statement and how to accept it, and the server logs a warning on startup. See [Obsidian terms](apps/docs/src/content/docs/server/environment.md#obsidian-terms).
+- GitHub Actions workflow that tests and publishes the multi-arch image to `ghcr.io/senshinya/ignis` on a version tag.
+
+### Changed
+
+- Obsidian pinned at 1.13.7. Existing deployments must set `OBSIDIAN_ACCEPT_TERMS=true` after reading the statement, or Obsidian will not start.
+- The published image, the update check, and the repository link in Ignis settings point at `senshinya/ignis`.
+- Settings always open inside the page; Obsidian 1.13's option to open settings in a separate window is hidden, since a browser tab cannot render it. The stored vault value is left untouched for desktop installs.
+
+### Fixed
+
+- Obsidian 1.13 takes its OS from the browser again, so the Mod key is Cmd on macOS; `process.platform` stays `linux`.
+- Zoom commands and the zoom level setting work with Obsidian 1.13, within Electron's zoom range.
+- Pending edits are saved when the tab reloads under Obsidian 1.13.
+- Obsidian's startup case-sensitivity check no longer leaves `.OBSIDIANTEST` in the vault root. A sync write and unlink of one path now reach the server in order, and a delete drops writes still buffered or retrying for that path.
+
 ## [0.8.10] - Karm (2026-08-20)
 
 ### Changed
