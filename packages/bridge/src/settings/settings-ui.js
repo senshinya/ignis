@@ -46,10 +46,17 @@ function createTab(id, name, displayFn, app, icon) {
     icon: icon || null,
     containerEl: createDiv("vertical-tab-content"),
     navEl: null,
+    // Obsidian 1.13 clears this array when it leaves a tab. It stays empty here, since display() renders the content.
+    renderedItems: [],
 
     display() {
       this.containerEl.empty();
       displayFn(this.containerEl, app);
+    },
+
+    // Obsidian 1.13 opens a tab with renderTab() instead of display().
+    renderTab() {
+      this.display();
     },
 
     hide() {
