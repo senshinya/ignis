@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.3] (2026-09-19)
+
+### Fixed
+
+- Ignis's own settings tabs (General, Vault, Core plugins) work with Obsidian 1.13. Opening one left the settings panel blank, and no other tab opened until the page was reloaded.
+
 ## [0.9.2] (2026-09-19)
 
 Brings in upstream Ignis 0.8.11.
