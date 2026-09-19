@@ -1,5 +1,5 @@
 // Obsidian 1.13+ refuses to start unless its host confirms a terms statement (see the shim's obsidian-terms.js).
-// The operator accepts it with OBSIDIAN_ACCEPT_TERMS=true; index.js stamps that on the page body for the shim to read.
+// The operator accepts it with OBSIDIAN_ACCEPT_TERMS=true; static/index-html.js stamps that on the page body for the shim to read.
 
 const DOCS_URL =
   "https://github.com/senshinya/ignis/blob/main/apps/docs/src/content/docs/server/environment.md#obsidian-terms";
