@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.9.2] (2026-09-19)
 
-Merged upstream Ignis 0.8.11 (2026-09-19).
+Brings in upstream Ignis 0.8.11.
 
 ### Added
 
