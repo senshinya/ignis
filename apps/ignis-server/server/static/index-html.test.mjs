@@ -13,12 +13,11 @@ describe("stampBodyFlags", () => {
 
   it("stamps each set flag as a data attribute on the body", () => {
     const out = stampBodyFlags(html, {
-      demoMode: true,
       obsidianTermsAccepted: true,
     });
 
     expect(out).toContain(
-      '<body class="theme-dark" data-demo-mode="true" data-obsidian-terms-accepted="true">',
+      '<body class="theme-dark" data-obsidian-terms-accepted="true">',
     );
   });
 

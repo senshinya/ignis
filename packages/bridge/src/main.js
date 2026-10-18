@@ -7,33 +7,36 @@ import {
 import {
   patchSettingsModal,
   unpatchSettingsModal,
+  refreshIgnisSettings,
+  reconcilePluginTabs,
 } from "./settings/inject.js";
 import { guardUnsupportedSettings } from "./settings/unsupported-settings.js";
+import { watchPluginToggles } from "./settings/plugin-list.js";
 import * as pluginRegistry from "./plugin-registry.js";
 import { initStatusBar } from "./status-bar.js";
-import { initSaveNotice } from "./save-notice.js";
+import { initSaveNotice } from "./notices/save-notice.js";
 import { installLoadingGate } from "./loading-gate.js";
 import { registerCommands } from "./commands/index.js";
-import { startDemoGuards, stopDemoGuards } from "./demo-guards.js";
-import { initInsecureApiNotice } from "./insecure-api-notice.js";
-import { initProxyBlockNotice } from "./proxy-block-notice.js";
-import { initWriteGiveupNotice } from "./write-giveup-notice.js";
+import { initInsecureApiNotice } from "./notices/insecure-api-notice.js";
+import { initProxyBlockNotice } from "./notices/proxy-block-notice.js";
+import { initWriteGiveupNotice } from "./notices/write-giveup-notice.js";
 import { initImageRetry } from "./image-retry.js";
 import { installReadingLock } from "./reading-lock.js";
 
 class IgnisBridgePlugin extends Plugin {
   async onload() {
-    if (!window.__ignis) {
-      console.log("[ignis-bridge] Not running in Ignis - plugin is a no-op.");
-      return;
-    }
-
     console.log("[ignis-bridge] Plugin loaded");
 
     await pluginRegistry.refresh();
     this._unsupportedSettingsUndo = guardUnsupportedSettings(this.app);
     patchSettingsModal(this);
-    startDemoGuards();
+    refreshIgnisSettings();
+    this._pluginTogglesUnsub = watchPluginToggles();
+
+    this.registerDomEvent(window, "ignis:virtual-plugin-loaded", () => {
+      reconcilePluginTabs(this.app.setting);
+    });
+
     this._statusBarUnsub = initStatusBar(this);
     this._saveNoticeUnsub = initSaveNotice();
     this._loadingGateUnsub = installLoadingGate();
@@ -69,10 +72,6 @@ class IgnisBridgePlugin extends Plugin {
   }
 
   onunload() {
-    if (!window.__ignis) {
-      return;
-    }
-
     if (this._statusBarUnsub) {
       this._statusBarUnsub();
     }
@@ -105,8 +104,11 @@ class IgnisBridgePlugin extends Plugin {
       this._unsupportedSettingsUndo();
     }
 
+    if (this._pluginTogglesUnsub) {
+      this._pluginTogglesUnsub();
+    }
+
     unpatchSettingsModal(this);
-    stopDemoGuards();
     console.log("[ignis-bridge] Plugin unloaded");
   }
 }

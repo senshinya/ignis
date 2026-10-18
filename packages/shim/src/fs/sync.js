@@ -7,7 +7,7 @@ import {
   resolvePathInfo,
 } from "./transforms.js";
 import { hasVirtualFile, getVirtualFile } from "./virtual-files.js";
-import { cancelPending, enqueue } from "./write-coalescer.js";
+import { cancelPending, enqueue, hasPending } from "./write-coalescer.js";
 import { forgetWrite, trackWrite } from "./write-durability.js";
 import { createUtimes } from "./utimes.js";
 
@@ -184,6 +184,10 @@ export function createFsSync(metadataCache, contentCache, transport) {
         ctime: metadataCache.get(resolved)?.ctime || Date.now(),
       });
 
+      if (hasPending(resolved)) {
+        cancelPending(resolved);
+      }
+
       // Fire-and-forget async send, tracked silently: retries with backoff and gives up without surfacing.
       const track = trackWrite(resolved, { silent: true });
 
@@ -358,6 +362,10 @@ export function createFsSync(metadataCache, contentCache, transport) {
     },
 
     utimesSync(path, atime, mtime) {
+      commitUtimes(path, atime, mtime);
+    },
+
+    lutimesSync(path, atime, mtime) {
       commitUtimes(path, atime, mtime);
     },
 

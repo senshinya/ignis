@@ -45,7 +45,11 @@ beforeAll(() => {
 
   if (canSymlink) {
     fs.symlinkSync(target, path.join(root, "linkvault"), "dir");
-    fs.symlinkSync(path.join(target, "nope"), path.join(root, "dangling"), "dir");
+    fs.symlinkSync(
+      path.join(target, "nope"),
+      path.join(root, "dangling"),
+      "dir",
+    );
   }
 });
 
@@ -83,20 +87,39 @@ describe("getVaultPath", () => {
   });
 });
 
-describe("acceptObsidianTerms", () => {
-  it("is set only when OBSIDIAN_ACCEPT_TERMS is exactly true", () => {
-    try {
-      delete process.env.OBSIDIAN_ACCEPT_TERMS;
-      expect(loadConfig().acceptObsidianTerms).toBe(false);
+describe("getVaultPathOrRescan", () => {
+  it("finds a vault folder added after startup by rescanning once", () => {
+    const config = loadConfig();
 
-      process.env.OBSIDIAN_ACCEPT_TERMS = "yes";
-      expect(loadConfig().acceptObsidianTerms).toBe(false);
+    expect(config.getVaultPath("added")).toBe(null);
 
-      process.env.OBSIDIAN_ACCEPT_TERMS = "true";
-      expect(loadConfig().acceptObsidianTerms).toBe(true);
-    } finally {
-      delete process.env.OBSIDIAN_ACCEPT_TERMS;
-    }
+    fs.mkdirSync(path.join(root, "added"));
+
+    expect(config.getVaultPathOrRescan("added", 10_000)).toBe(
+      path.join(root, "added"),
+    );
+    expect(config.getVaultPath("added")).toBe(path.join(root, "added"));
+  });
+
+  it("does not rescan twice inside the throttle window", () => {
+    const config = loadConfig();
+
+    expect(config.getVaultPathOrRescan("missing", 20_000)).toBe(null);
+
+    fs.mkdirSync(path.join(root, "throttled"));
+
+    expect(config.getVaultPathOrRescan("throttled", 20_500)).toBe(null);
+    expect(config.getVaultPathOrRescan("throttled", 21_000)).toBe(
+      path.join(root, "throttled"),
+    );
+  });
+
+  it("answers a known vault without rescanning", () => {
+    const config = loadConfig();
+
+    expect(config.getVaultPathOrRescan("realvault", 30_000)).toBe(
+      path.join(root, "realvault"),
+    );
   });
 });
 
@@ -124,5 +147,22 @@ describe("dev flags", () => {
 
     expect(config.devSuppressWriteFailures).toBe(true);
     expect(config.devForceReadingView).toBe(true);
+  });
+});
+
+describe("acceptObsidianTerms", () => {
+  it("is set only when OBSIDIAN_ACCEPT_TERMS is exactly true", () => {
+    try {
+      delete process.env.OBSIDIAN_ACCEPT_TERMS;
+      expect(loadConfig().acceptObsidianTerms).toBe(false);
+
+      process.env.OBSIDIAN_ACCEPT_TERMS = "yes";
+      expect(loadConfig().acceptObsidianTerms).toBe(false);
+
+      process.env.OBSIDIAN_ACCEPT_TERMS = "true";
+      expect(loadConfig().acceptObsidianTerms).toBe(true);
+    } finally {
+      delete process.env.OBSIDIAN_ACCEPT_TERMS;
+    }
   });
 });

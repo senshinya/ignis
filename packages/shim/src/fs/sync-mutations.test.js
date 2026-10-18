@@ -155,7 +155,7 @@ describe("sync fs mutations", () => {
     expect(deps.transport.copyFile).toHaveBeenCalled();
   });
 
-  it("utimesSync sets mtime and fires the transport", () => {
+  it("utimesSync sets mtime and fires the transport", async () => {
     const deps = makeDeps();
     const fs = createFsSync(
       deps.metadataCache,
@@ -166,23 +166,25 @@ describe("sync fs mutations", () => {
     deps.store.set(key, { type: "file", mtime: 0 });
 
     fs.utimesSync("note.md", 111, 222);
+    await new Promise((r) => setTimeout(r, 0));
 
     expect(deps.store.get(key).mtime).toBe(222000);
     expect(deps.transport.utimes).toHaveBeenCalledWith(key, 111000, 222000);
   });
 
-  it("utimesSync converts a Date argument to milliseconds", () => {
+  it("utimesSync converts a Date argument to milliseconds", async () => {
     const deps = makeDeps();
     const fs = createFsSync(
       deps.metadataCache,
       deps.contentCache,
       deps.transport,
     );
-    const key = resolvePath("note.md");
+    const key = resolvePath("dated.md");
     deps.store.set(key, { type: "file", mtime: 0 });
 
     const when = new Date(1783339200000);
-    fs.utimesSync("note.md", when, when);
+    fs.utimesSync("dated.md", when, when);
+    await new Promise((r) => setTimeout(r, 0));
 
     expect(deps.store.get(key).mtime).toBe(1783339200000);
     expect(deps.transport.utimes).toHaveBeenCalledWith(
@@ -420,6 +422,35 @@ describe("unlinking a path drops writes still pending for it", () => {
     );
     return { deps, fs };
   }
+
+  it.each(["unlinkSync", "rmSync"])("%s cancels a same-tick write retry", async (remove) => {
+    vi.useFakeTimers();
+    const { deps, fs } = setup();
+    deps.transport.writeFile = vi.fn().mockRejectedValue(new Error("offline"));
+    coalescer.initWriteCoalescer(deps.transport);
+    wd.initWriteDurability(deps.transport, coalescer.enqueue);
+
+    fs.writeFileSync("same-tick.md", "x", "utf8");
+    fs[remove]("same-tick.md");
+    await vi.advanceTimersByTimeAsync(60000);
+
+    expect(deps.transport.writeFile).toHaveBeenCalledTimes(1);
+    expect(deps.store.has("same-tick.md")).toBe(false);
+  });
+
+  it.each(["unlinkSync", "rmSync"])("%s keeps metadata absent after a same-tick write succeeds", async (remove) => {
+    vi.useFakeTimers();
+    const { deps, fs } = setup();
+    deps.transport.writeFile = vi.fn().mockResolvedValue({ mtime: 1, size: 1 });
+    coalescer.initWriteCoalescer(deps.transport);
+
+    fs.writeFileSync("same-tick-success.md", "x", "utf8");
+    fs[remove]("same-tick-success.md");
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(deps.transport.writeFile).toHaveBeenCalledTimes(1);
+    expect(deps.store.has("same-tick-success.md")).toBe(false);
+  });
 
   it("does not retry a failed write once the path is unlinked", async () => {
     vi.useFakeTimers();

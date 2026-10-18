@@ -1,8 +1,7 @@
 import { showVaultManager } from "../ui-registry.js";
 import { vaultService } from "@ignis/services";
-import { proxyFetch } from "../util/proxy.js";
+import { sendRequest } from "../util/send-request.js";
 import {
-  OBSIDIAN_TERMS_STATEMENT,
   isObsidianTermsAccepted,
   reportTermsNotAccepted,
 } from "./obsidian-terms.js";
@@ -13,8 +12,12 @@ const syncHandlers = {
   vault: () => window.__vaultConfig || { id: "default-vault", path: "/" },
   version: () => window.__obsidianVersion || "0.0.0",
   "is-dev": () => false,
+  "is-quitting": () => false,
+  // A browser tab closes or reloads on beforeunload; let Obsidian flush pending saves.
+  "is-closing": () => true,
+  cli: () => false,
+  "set-language": () => null,
 
-  // Managed-install policy (policy.json). Outside a managed install Obsidian allows every feature.
   policy: () => ({
     plugins: true,
     themes: true,
@@ -27,20 +30,19 @@ const syncHandlers = {
   }),
 
   terms: () => {
-    if (isObsidianTermsAccepted()) {
-      return OBSIDIAN_TERMS_STATEMENT;
+    if (!isObsidianTermsAccepted()) {
+      reportTermsNotAccepted();
+      return null;
     }
 
-    reportTermsNotAccepted();
-    return null;
+    if (!window.__obsidianTerms) {
+      console.error(
+        "[ignis] Obsidian asked for its terms handshake but the server extracted no value from this Obsidian version. Set OBSIDIAN_TERMS_STRING, or the terms extraction needs updating.",
+      );
+    }
+
+    return window.__obsidianTerms || null;
   },
-
-  // Obsidian only flushes pending saves on beforeunload when the window reports it is closing.
-  // A browser tab fires beforeunload only when it is closing or reloading.
-  "is-closing": () => true,
-
-  // The main process keeps the language for its native menus; there are none here.
-  "set-language": () => null,
 
   "file-url": () =>
     "/vault-files/" + encodeURIComponent(window.__currentVaultId || "") + "/",
@@ -48,7 +50,7 @@ const syncHandlers = {
   "disable-update": () => true,
   update: () => "",
   "disable-gpu": () => false,
-  // The browser draws the window, so Obsidian should not reserve room for its own title bar or window controls.
+  // The browser draws the window, so Obsidian need not reserve space for window controls.
   frame: () => "native",
   "set-icon": () => null,
   "get-icon": () => null,
@@ -72,6 +74,7 @@ const syncHandlers = {
 
   "copy-asar": () => false,
   "check-update": () => null,
+  "latest-public-version": () => window.__obsidianVersion || null,
 
   "vault-list": () => {
     const result = {};
@@ -122,7 +125,7 @@ const syncHandlers = {
 
 async function handleRequestUrl(requestId, request) {
   try {
-    const result = await proxyFetch({
+    const result = await sendRequest({
       url: request.url,
       method: request.method,
       headers: request.headers,
@@ -145,7 +148,8 @@ async function handleRequestUrl(requestId, request) {
 
 export const ipcRenderer = {
   send(channel, ...args) {
-    console.log("[shim:ipcRenderer] send:", channel, args);
+    // skip args, avoids leaking sensitive headers and fields
+    console.log("[shim:ipcRenderer] send:", channel);
 
     if (channel === "context-menu") {
       queueMicrotask(() =>
@@ -186,7 +190,7 @@ export const ipcRenderer = {
   },
 
   sendSync(channel, ...args) {
-    console.log("[shim:ipcRenderer] sendSync:", channel, args);
+    console.log("[shim:ipcRenderer] sendSync:", channel);
 
     if (syncHandlers[channel]) {
       return syncHandlers[channel](...args);

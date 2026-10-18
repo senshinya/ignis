@@ -1,5 +1,11 @@
 /* CSS overrides for browser vs desktop differences. */
 
+/* A browser tab has no window controls to reserve space for. */
+body {
+  --frame-left-space: 0px !important;
+  --frame-right-space: 0px !important;
+}
+
 /* fix table cell height in firefox in edit mode with live preview */
 .markdown-source-view.mod-cm6 .cm-table-widget th,
 .markdown-source-view.mod-cm6 .cm-table-widget td {
@@ -11,4 +17,15 @@
 .workspace-drawer-header-switcher select option {
   background-color: var(--background-secondary);
   color: var(--text-normal);
+}
+
+/* 100% and 100vh extend under mobile browser bars. */
+@supports (height: 100dvh) {
+  body.is-phone {
+    height: 100dvh;
+  }
+
+  body.is-phone .mobile-toolbar {
+    top: calc(100dvh - var(--keyboard-height) - var(--mobile-toolbar-height));
+  }
 }

@@ -3,10 +3,10 @@ const path = require("path");
 const config = require("../config");
 const { getVersion } = require("../version");
 const { versionedSrc } = require("./cache-headers");
+const { getObsidianTerms } = require("./obsidian-terms");
 
 // Flags the served index.html carries as data attributes on its body, for the shim and bridge to read.
 const BODY_FLAGS = [
-  ["demoMode", "data-demo-mode"],
   ["obsidianTermsAccepted", "data-obsidian-terms-accepted"],
 ];
 
@@ -27,6 +27,10 @@ function stampBodyFlags(html, flags) {
 }
 
 let cachedHtml = null;
+
+function scriptJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
 
 function buildIndexHtml() {
   if (cachedHtml) {
@@ -55,6 +59,7 @@ function buildIndexHtml() {
   const templatePath = path.join(__dirname, "..", "assets", "index.html");
   let html = fs.readFileSync(templatePath, "utf-8");
 
+  html = html.replace("__OBSIDIAN_TERMS__", scriptJson(getObsidianTerms()));
   html = html.replace("__IGNIS_UI_SRC__", `ignis-ui.js?v=${version}`);
   html = html.replace("__SHIM_LOADER_SRC__", `shim-loader.js?v=${version}`);
   html = html.replace(
@@ -67,7 +72,6 @@ function buildIndexHtml() {
   );
 
   html = stampBodyFlags(html, {
-    demoMode: config.demoMode,
     obsidianTermsAccepted: config.acceptObsidianTerms,
   });
 

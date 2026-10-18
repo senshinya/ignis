@@ -1,7 +1,7 @@
 // The request headers that present the Obsidian desktop client's identity.
 
 const DESKTOP_RUNTIMES = {
-  "1.12.7": { chrome: "142.0.7444.265", electron: "39.8.3" },
+  "1.14.4": { chrome: "150.0.7871.250", electron: "43.7.5" },
 };
 
 const FALLBACK_OS_SEGMENT = "Windows NT 10.0; Win64; x64";

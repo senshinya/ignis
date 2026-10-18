@@ -152,12 +152,8 @@ If the container cannot reach the internet on first run, you can download the Ob
       - OBSIDIAN_PACKAGE=/packages/obsidian.deb
 ```
 
-Ignis will unpack the local copy instead of downloading. It's recommended to match the Obsidian version the Ignis release pins.
+Ignis will unpack the local copy instead of downloading. The package must be the Obsidian version pinned by Ignis, or newer.
 
 ### Backups
 
 Your vaults are ordinary files under `vaults`. Back them up with whatever you use for other server data. Ignis has no built-in backup.
-
-### Running a public demo
-
-To run a public, throwaway demo instance instead of a private server, see [`examples/demo/`](https://github.com/Nystik-gh/ignis/tree/main/apps/ignis-server/examples/demo) in the repository.

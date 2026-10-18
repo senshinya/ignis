@@ -25,11 +25,14 @@ export function reportTermsNotAccepted() {
   }
 
   noticeShown = true;
+  const statement =
+    (typeof window !== "undefined" && window.__obsidianTerms) ||
+    OBSIDIAN_TERMS_STATEMENT;
 
   showMessageDialog(
     "Obsidian terms not accepted",
     "This version of Obsidian only starts after its host confirms this statement:\n\n" +
-      `"${OBSIDIAN_TERMS_STATEMENT}"\n\n` +
+      `"${statement}"\n\n` +
       "Ignis does not confirm it on your behalf. If you run this server and agree, " +
       "set OBSIDIAN_ACCEPT_TERMS=true in the server environment and restart it.\n\n" +
       DOCS_URL,

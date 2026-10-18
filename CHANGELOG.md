@@ -2,6 +2,92 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+Brings in upstream Ignis 0.8.12–0.8.18 and Obsidian 1.14.4.
+
+### Upstream [0.8.18] - Karm (2026-10-17)
+
+#### Fixed
+
+- Search performance improved when notes are missing from content cache.
+- `requestUrl` sends the `contentType` it is given.
+- Direct-fetch hosts apply to every plugin request.
+
+#### Security
+
+- Request headers, bodies, and URL query strings are no longer written to the browser console.
+
+### Upstream [0.8.17] - Karm (2026-10-11)
+
+#### Added
+
+- Docs, community, and support links in Ignis settings.
+- `fs/promises` shim.
+
+#### Changed
+
+- Obsidian pinned at 1.14.4.
+
+#### Fixed
+
+- Bottom navigation is no longer cut off on phones.
+- The mobile editor toolbar stays above the keyboard.
+- Long-pressing text on mobile shows the browser's copy and paste menu.
+- Ignis settings tab displays properly on phones.
+
+### Upstream [0.8.16] - Karm (2026-10-04)
+
+#### Changed
+
+- Opening a note in a new window opens it in a tab.
+- Ignore rules are saved as you edit them, and suggestions already covered by a rule are hidden.
+- Refresh vault from disk updates the file explorer immediately.
+- Improved spacing in list editors, and the save indicator respects reduced motion.
+
+#### Fixed
+
+- Edits made while the server is unreachable are no longer reverted when it reconnects.
+- With write coalescing on, a file deleted right after saving stays deleted.
+- `fs.utimes` works when called right after a write.
+- `fs.stat` reports `ctimeMs` correctly.
+- Headless Sync status spinner shows a more accurate state.
+- Ignis plugin settings tabs no longer go missing from Settings after a reload.
+- Enabling an Ignis plugin takes effect on the next reload.
+- A vault folder created outside the vault manager loads correctly on its first open.
+
+#### Removed
+
+- Demo mode and its `DEMO_*` variables.
+
+### Upstream [0.8.15] - Karm (2026-10-01)
+
+#### Fixed
+
+- File creation time is preserved.
+
+### Upstream [0.8.14] - Karm (2026-09-27)
+
+#### Fixed
+
+- Vaults with pop-out windows in their saved layout no longer break on load.
+- Zoom handled properly.
+
+### Upstream [0.8.13] - Karm (2026-09-25)
+
+#### Changed
+
+- Obsidian pinned at 1.13.7.
+- `OBSIDIAN_VERSION` and `OBSIDIAN_PACKAGE` only accept the pinned Obsidian version or newer.
+- Ignis and Headless Sync settings tabs render without a loading step.
+- Settings reopen on the last viewed Ignis tab.
+
+### Upstream [0.8.12] - Karm (2026-09-21)
+
+#### Fixed
+
+- "Always trust plugins" setting is now applied consistently in fresh browsers.
+
 ## [0.9.3] (2026-09-19)
 
 ### Fixed

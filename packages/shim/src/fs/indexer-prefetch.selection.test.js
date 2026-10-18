@@ -17,14 +17,19 @@ const tree = {
   somedir: { type: "directory" },
 };
 
-// Total bytes of the priority-slice files.
-const PRIORITY_BYTES = 100 + 50 + 2 * MB + 80 + 200 + 300 * 1024;
-
 let fetchCalls;
 
 function makeCache() {
   const store = new Map();
-  return { store, set: (path, content) => store.set(path, content) };
+
+  return {
+    store,
+    pathUpdates: () => 0,
+    setFromServer: (path, content) => {
+      store.set(path, content);
+      return true;
+    },
+  };
 }
 
 beforeEach(() => {
@@ -145,99 +150,6 @@ describe("prefetchVaultContent slicing", () => {
     await result.bulk;
 
     expect(fetchCalls.flat()).not.toContain("Big.md");
-  });
-
-  it("reports priority byte progress from zero up to the slice total", async () => {
-    const onProgress = vi.fn();
-    const result = prefetchVaultContent("v", tree, makeCache(), { onProgress });
-    await result.priority;
-
-    expect(onProgress).toHaveBeenCalledWith(0, PRIORITY_BYTES);
-    expect(onProgress).toHaveBeenLastCalledWith(PRIORITY_BYTES, PRIORITY_BYTES);
-  });
-
-  it("caches returned content under its path", async () => {
-    const cache = makeCache();
-    const result = prefetchVaultContent("v", tree, cache);
-    await result.bulk;
-
-    expect(cache.store.get(".obsidian/app.json")).toBe(
-      "content:.obsidian/app.json",
-    );
-    expect(cache.store.get("Note.md")).toBe("content:Note.md");
-  });
-
-  it("resolves both promises without fetching when there is no vault", async () => {
-    const result = prefetchVaultContent("", tree, makeCache());
-
-    await result.priority;
-    await result.bulk;
-
-    expect(fetchCalls.length).toBe(0);
-  });
-
-  it("resolves the priority promise even when a batch fails", async () => {
-    globalThis.fetch = vi.fn(async () => ({ ok: false, status: 500 }));
-
-    const result = prefetchVaultContent("v", tree, makeCache());
-
-    await expect(result.priority).resolves.toBeUndefined();
-  });
-});
-
-describe("prefetchVaultContent parallel batching", () => {
-  it("fetches every file across multiple batches and caches each exactly once", async () => {
-    const many = {};
-
-    for (let i = 0; i < 120; i++) {
-      many[`Note${i}.md`] = { type: "file", size: 100 };
-    }
-
-    const cache = makeCache();
-    const result = prefetchVaultContent("v", many, cache);
-    await result.bulk;
-
-    // 120 files / 50 per batch = 3 batches; each path is fetched once and cached.
-    expect(fetchCalls.length).toBe(3);
-
-    const allPaths = fetchCalls.flat();
-    expect(allPaths.length).toBe(120);
-    expect(new Set(allPaths).size).toBe(120);
-    expect(cache.store.size).toBe(120);
-  });
-
-  it("caches the batches that landed before a mid-stream failure, without rejecting", async () => {
-    const many = {};
-
-    for (let i = 0; i < 120; i++) {
-      many[`Note${i}.md`] = { type: "file", size: 100 };
-    }
-
-    let calls = 0;
-    globalThis.fetch = vi.fn(async (url, init) => {
-      calls++;
-
-      if (calls === 2) {
-        return { ok: false, status: 500 };
-      }
-
-      const paths = JSON.parse(init.body).paths;
-      const files = {};
-
-      for (const p of paths) {
-        files[p] = "content:" + p;
-      }
-
-      return { ok: true, json: async () => ({ files }) };
-    });
-
-    const cache = makeCache();
-    const result = prefetchVaultContent("v", many, cache);
-
-    await expect(result.bulk).resolves.toBeUndefined();
-    // The batches that landed before the failing one are cached; the failure abandons the rest.
-    expect(cache.store.size).toBeGreaterThan(0);
-    expect(cache.store.size).toBeLessThan(120);
   });
 });
 

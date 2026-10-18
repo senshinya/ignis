@@ -67,9 +67,36 @@ describe("ipcRenderer.sendSync terms", () => {
 
   it("returns Obsidian's statement when the operator accepted it", () => {
     stubBody({ obsidianTermsAccepted: "true" });
+    vi.stubGlobal("window", { __obsidianTerms: OBSIDIAN_TERMS_STATEMENT });
 
     expect(ipcRenderer.sendSync("terms")).toBe(OBSIDIAN_TERMS_STATEMENT);
     expect(showMessageDialog).not.toHaveBeenCalled();
+  });
+
+  it("returns the statement extracted from the served Obsidian version", () => {
+    stubBody({ obsidianTermsAccepted: "true" });
+    vi.stubGlobal("window", { __obsidianTerms: "Updated Obsidian terms" });
+
+    expect(ipcRenderer.sendSync("terms")).toBe("Updated Obsidian terms");
+  });
+
+  it("reports a missing extracted statement even after acceptance", () => {
+    stubBody({ obsidianTermsAccepted: "true" });
+    vi.stubGlobal("window", {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(ipcRenderer.sendSync("terms")).toBeNull();
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("OBSIDIAN_TERMS_STRING"),
+    );
+  });
+
+  it("shows the served statement while waiting for operator acceptance", () => {
+    stubBody({});
+    vi.stubGlobal("window", { __obsidianTerms: "Updated Obsidian terms" });
+
+    expect(ipcRenderer.sendSync("terms")).toBeNull();
+    expect(showMessageDialog.mock.calls[0][1]).toContain("Updated Obsidian terms");
   });
 
   it("returns nothing and explains how to accept when the operator has not", () => {
@@ -91,4 +118,68 @@ describe("ipcRenderer.sendSync terms", () => {
 
     expect(showMessageDialog).toHaveBeenCalledTimes(1);
   });
+});
+
+describe("request-url IPC", () => {
+  let proxied;
+
+  beforeEach(() => {
+    proxied = [];
+
+    vi.stubGlobal("window", {
+      location: { origin: "https://ignis.test" },
+      __originalFetch: async (url, opts) => {
+        proxied.push(JSON.parse(opts.body));
+
+        return {
+          ok: true,
+          json: async () => ({ status: 200, headers: {}, body: "" }),
+        };
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  function requestUrl(request) {
+    return new Promise((resolve) => {
+      ipcRenderer.once("req-1", (event, reply) => resolve(reply));
+      ipcRenderer.send("request-url", "req-1", request);
+    });
+  }
+
+  describe("a requestUrl call through IPC", () => {
+    it("sends its contentType as a Content-Type header", async () => {
+      vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await requestUrl({
+        url: "https://api.example.test/annotations",
+        method: "POST",
+        contentType: "application/json",
+        body: "{}",
+      });
+
+      expect(proxied[0].headers).toEqual({ "Content-Type": "application/json" });
+    });
+  });
+
+  describe("the request-url log line", () => {
+    it("names the channel without the request's headers or body", async () => {
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await requestUrl({
+        url: "https://api.example.test/login",
+        method: "POST",
+        headers: { Authorization: "Bearer SECRET" },
+        body: '{"password":"SECRET"}',
+      });
+
+      expect(log).toHaveBeenCalledWith("[shim:ipcRenderer] send:", "request-url");
+      expect(JSON.stringify(log.mock.calls)).not.toContain("SECRET");
+    });
+  });
+
 });

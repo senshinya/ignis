@@ -17,8 +17,8 @@ Configure the server through environment variables, set in the `environment:` bl
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `OBSIDIAN_VERSION` | `1.13.7` | Obsidian version fetched on first run. Each release pins a known-good version. |
-| `OBSIDIAN_PACKAGE` | unset | Path to a pre-placed Obsidian package (`.deb`, `.asar.gz`, or `.asar`) to unpack instead of downloading, for offline installs. |
+| `OBSIDIAN_VERSION` | unset | Run a different Obsidian version than the version pinned by Ignis. Only newer versions are allowed, with no guarantee that Ignis works with them. |
+| `OBSIDIAN_PACKAGE` | unset | Path to a pre-placed Obsidian package (`.deb`, `.asar.gz`, or `.asar`) to unpack instead of downloading, for offline installs. The package must be the version pinned by Ignis or newer. |
 | `OBSIDIAN_ACCEPT_TERMS` | unset | Set to `true` to accept Obsidian's terms statement, which Obsidian 1.13 and later require before they start. See [Obsidian terms](#obsidian-terms). |
 | `OBSIDIAN_ASSETS_PATH` | `/app/obsidian-app` | Where the extracted Obsidian files live. Point it at a pre-extracted directory to skip the download. |
 
@@ -84,7 +84,3 @@ Experimental switches that may change or disappear in later releases. They exist
 | --- | --- | --- |
 | `DEV_SUPPRESS_WRITE_FAILURES` | `false` | Hide the notices Ignis shows when a save fails. Writes are still attempted and still fail. |
 | `DEV_FORCE_READING_VIEW` | `false` | Open every note in reading view and prevent changing the view mode. |
-
----
-
-Demo mode adds its own `DEMO_*` variables for running a public, throwaway instance. See [`examples/demo/`](https://github.com/Nystik-gh/ignis/tree/main/apps/ignis-server/examples/demo) in the repository.
