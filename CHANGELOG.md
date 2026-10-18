@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.9.4] (2026-10-19)
 
 Brings in upstream Ignis 0.8.12–0.8.18 and Obsidian 1.14.4.
+
+### Fixed
+
+- A synchronous write followed immediately by a delete stays deleted, even if the write fails and would otherwise retry. A completed write also leaves the deleted file absent from the metadata cache.
+- The terms handshake uses the statement from the served Obsidian version after the operator sets `OBSIDIAN_ACCEPT_TERMS=true`.
 
 ### Upstream [0.8.18] - Karm (2026-10-17)
 
